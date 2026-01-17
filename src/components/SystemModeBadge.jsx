@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function SystemModeBadge({ mode }) {
-    // Mode "AUTO" mu kontrol ediyoruz (Büyük harf uyumu)
+
     const isAuto = mode === 'AUTO';
 
     return (

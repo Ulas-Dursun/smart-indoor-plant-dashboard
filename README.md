@@ -1,16 +1,60 @@
-# React + Vite
+# 🌱 Smart Indoor Plant Control System – Web Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This repository contains the **Web Admin Dashboard** for the Smart Indoor Plant Control System. It acts as the central control unit, visualizing real-time sensor data from the ESP32 and allowing manual management of hardware actuators via Firebase Realtime Database.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🧠 System Architecture
 
-## React Compiler
+The project operates on a three-layer decoupled architecture:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1.  **Embedded Layer (ESP32):** Collects raw sensor data (DHT11/SHT40, Capacitive Soil Moisture, LDR) and executes physical commands.
+2.  **Cloud Layer (Firebase):** Acts as the low-latency synchronization bridge between hardware and software.
+3.  **Web Dashboard (This Repo):** Handles data visualization, historical logging, and automation logic override.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ⚡ Key Features
+
+### 📡 Real-Time Telemetry
+* Live monitoring of **Soil Moisture (%)**, **Temperature (°C)**, **Humidity (%)**, and **Light Status**.
+* **Heartbeat Indicator:** Visual pulse animation to confirm active device connection.
+
+### 📈 Client-Side Data Historian
+* Implements a custom **FIFO (First-In-First-Out) logger** within the frontend.
+* Automatically records incoming sensor data to Firebase `history/` node.
+* **Optimization:** Limits historical data to the last **30 data points** to ensure chart performance and prevent database bloating.
+
+### ⚙️ Automation & Control
+* **Hysteresis Logic:** In `AUTO` mode, the dashboard triggers irrigation when moisture drops below **34.5%** and cuts off at **40%**.
+* **Manual Override:** Direct toggle switches for the Water Pump, Cooling Fan, and Grow Lights.
+* **Safety Protocol:** A global **"Master Switch"** completely disables the system and actuators in case of emergency.
+
+### 📊 Visualization
+* Interactive line charts powered by **Recharts**.
+* Responsive UI built with **Tailwind CSS** and **Lucide-React** icons.
+
+---
+
+## 🧰 Tech Stack
+
+* **Core:** React.js (Vite)
+* **Styling:** Tailwind CSS
+* **State Management:** Firebase Realtime Database (WebSocket)
+* **Charts:** Recharts
+* **Icons:** Lucide-React
+
+---
+## 🚀 Installation & Setup
+
+### 1. Prerequisites
+Ensure you have **Node.js** (v16+) installed.
+
+### 2. Clone & Install
+git clone [https://github.com/ulas-dursun/smart-plant-dashboard.git](https://github.com/ulas-dursun/smart-plant-dashboard.git)
+cd smart-plant-dashboard
+
+# Install dependencies
+npm install
+# Run the Application
+npm run dev

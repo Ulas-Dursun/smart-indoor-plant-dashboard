@@ -1,17 +1,19 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
+
 const firebaseConfig = {
-    apiKey: "AIzaSyDlDOQHNLevlsCrmA3qqP19Vs3hkB01p6w",
-    authDomain: "smart-indoor-plant-syste-6edf1.firebaseapp.com",
-    databaseURL: "https://smart-indoor-plant-syste-6edf1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "smart-indoor-plant-syste-6edf1",
-    storageBucket: "smart-indoor-plant-syste-6edf1.firebasestorage.app",
-    messagingSenderId: "414003180146",
-    appId: "1:414003180146:web:4253c06ca7938809da08eb"
+    apiKey: "AIzaSyADx2AvcjDOJNCPiUqxBcH-DMpsVe-kqNI",
+    authDomain: "smart-plant-monitor-3c171.firebaseapp.com",
+    databaseURL: "https://smart-plant-monitor-3c171-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "smart-plant-monitor-3c171",
+    storageBucket: "smart-plant-monitor-3c171.firebasestorage.app",
+    messagingSenderId: "849155838832",
+    appId: "1:849155838832:web:32675f94bce345cd62b5b5",
+    measurementId: "G-XZWX6P0WXX"
 };
 
+// Start Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
 
-export { database };
+export const database = getDatabase(app);

@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { ref, update } from "firebase/database";
+import React, { useEffect, useRef } from "react";
+import { ref, update, push, remove } from "firebase/database";
 import { database } from "./firebase";
 import StatCard from "./components/StatCard";
 import SensorChart from "./components/SensorChart";
@@ -9,46 +9,75 @@ import useFirebaseValue from "./hooks/useFirebaseValue";
 import { Power, Cpu, ArrowRight, Zap } from "lucide-react";
 
 function App() {
-    // 1. GERÇEK VERİLERİ DİNLE
     const sensors = useFirebaseValue("sensors");
     const actuators = useFirebaseValue("actuators");
     const system = useFirebaseValue("system");
     const historyData = useFirebaseValue("history/moisture");
 
-    // 2. Grafik Verisi
+    // Keep last persisted timestamp without triggering re-renders
+    const lastRecordedTimeRef = useRef(null);
+
     const chartData = historyData
-        ? Object.entries(historyData).map(([, val]) => ({ time: val.time, value: val.value })).slice(-20)
+        ? Object.entries(historyData).map(([, val]) => ({
+            time: val.time || "",
+            value: val.value || 0
+        })).slice(-30)
         : [];
 
-    // --- OTOMASYON MOTORU ---
+
     useEffect(() => {
+        if (!sensors || !sensors.lastUpdated) return;
+
+        // Only persist when we receive a new sample
+        if (sensors.lastUpdated !== lastRecordedTimeRef.current) {
+
+            const historyRef = ref(database, 'history/moisture');
+
+            push(historyRef, {
+                time: sensors.lastUpdated,
+                value: sensors.moisture
+            }).then(() => {
+                // Cap history size to keep the DB and chart lightweight
+                if (historyData) {
+                    const keys = Object.keys(historyData);
+                    if (keys.length > 30) {
+                        const oldestKey = keys[0];
+                        remove(ref(database, `history/moisture/${oldestKey}`));
+                    }
+                }
+            });
+
+            lastRecordedTimeRef.current = sensors.lastUpdated;
+        }
+    }, [sensors, historyData]);
+
+    useEffect(() => {
+
         if (system?.enabled === false || !sensors) return;
 
-        if (system?.mode === 'AUTO') {
+        const currentMode = system?.mode || 'MANUAL';
+
+        if (currentMode === 'AUTO') {
             const currentMoisture = sensors.moisture;
-            // Nem 35'ten küçükse pompala
-            if (currentMoisture < 35 && !actuators?.waterPump) {
+            // Simple hysteresis to avoid rapid toggling
+            if (currentMoisture < 34.5 && !actuators?.waterPump) {
                 update(ref(database, 'actuators'), { waterPump: true });
             }
-            else if (currentMoisture >= 35 && actuators?.waterPump) {
+            else if (currentMoisture >= 40 && actuators?.waterPump) {
                 update(ref(database, 'actuators'), { waterPump: false });
             }
         }
-    }, [sensors?.moisture, system?.mode, system?.enabled, actuators?.waterPump]);
+    }, [sensors, system, actuators]);
 
-    // Işık Verisini "Sayı"dan "Kelime"ye Çevirme Mantığı
-    // Eğer sensörden 1 gelirse "Bright" (Aydınlık), 0 gelirse "Dark" (Karanlık)
-    // Batuhan'ın 1 mi yoksa 0 mı gönderdiğine göre burayı tersine çevirebiliriz.
-    // Şimdilik Varsayım: 1 = Işık Var, 0 = Işık Yok.
     const getLightStatus = () => {
         if (!sensors) return "--";
-        // Gelen veri 1 ise veya true ise
-        return sensors.light ? "Bright" : "Dark";
+        return sensors.light === 1 ? "Bright" : "Dark";
     };
 
     const toggleMode = () => {
         if (!system?.enabled) return;
-        const newMode = system?.mode === 'AUTO' ? 'MANUAL' : 'AUTO';
+        const currentMode = system?.mode || 'MANUAL';
+        const newMode = currentMode === 'AUTO' ? 'MANUAL' : 'AUTO';
         update(ref(database, 'system'), { mode: newMode });
     };
 
@@ -58,7 +87,7 @@ function App() {
         if (newState === false) update(ref(database, 'actuators'), { waterPump: false });
     };
 
-    // OFFLINE EKRANI
+
     if (system?.enabled === false) {
         return (
             <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
@@ -66,10 +95,10 @@ function App() {
                     <Power size={64} className="text-red-500" />
                 </div>
                 <h1 className="text-3xl font-bold mb-2">SYSTEM DISABLED</h1>
-                <p className="text-slate-400 mb-8">Master switch is OFF.</p>
+                <p className="text-slate-400 mb-8 uppercase text-[10px] tracking-widest font-bold">Master switch is OFF</p>
                 <button
                     onClick={toggleSystemPower}
-                    className="bg-emerald-500 hover:bg-emerald-400 px-10 py-4 rounded-full font-bold transition-all shadow-xl shadow-emerald-500/20 flex items-center gap-2"
+                    className="bg-emerald-500 hover:bg-emerald-400 px-10 py-4 rounded-full font-bold transition-all shadow-xl shadow-emerald-500/20 flex items-center gap-2 active:scale-95"
                 >
                     <Power size={20} /> POWER ON SYSTEM
                 </button>
@@ -79,8 +108,8 @@ function App() {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] p-6 font-sans text-slate-800">
-            {/* HEADER */}
-            <header className="flex flex-col md:flex-row justify-between items-center mb-10">
+            {/* HEADER AREA */}
+            <header className="flex flex-col md:flex-row justify-between items-center mb-10 max-w-7xl mx-auto">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={toggleSystemPower}
@@ -89,10 +118,10 @@ function App() {
                         <Power size={20} className="text-slate-400 group-hover:text-red-500" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Smart Plant Monitor</h1>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Smart Plant Monitor</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <span className={`w-2 h-2 rounded-full ${sensors ? 'bg-emerald-500 animate-pulse' : 'bg-orange-400'}`}></span>
-                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                 {sensors ? "Live Connection" : "Waiting for Data..."}
                             </p>
                         </div>
@@ -104,28 +133,22 @@ function App() {
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Operation Mode</p>
                     </div>
                     <button onClick={toggleMode} className="transform active:scale-95 transition-transform">
-                        <SystemModeBadge mode={system?.mode} />
+                        <SystemModeBadge mode={system?.mode || 'MANUAL'} />
                     </button>
                 </div>
             </header>
 
             <div className="max-w-7xl mx-auto">
+                {/* STAT CARDS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <StatCard title="Soil Moisture" value={sensors?.moisture ?? "--"} unit="%" type="moisture" />
                     <StatCard title="Temperature" value={sensors?.temperature ?? "--"} unit="°C" type="temperature" />
                     <StatCard title="Air Humidity" value={sensors?.humidity ?? "--"} unit="%" type="default" />
-
-                    {/* GÜNCELLENEN KISIM: Işık Kartı */}
-                    {/* Artık sayı değil, Bright/Dark yazısı ve boş unit gönderiyoruz */}
-                    <StatCard
-                        title="Light Status"
-                        value={getLightStatus()}
-                        unit=""
-                        type="light"
-                    />
+                    <StatCard title="Light Status" value={getLightStatus()} unit="" type="light" />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* CHART SECTION */}
                     <div className="lg:col-span-2 bg-white rounded-[2rem] p-2 shadow-sm border border-slate-100">
                         <SensorChart title="Real-time Moisture Analysis" data={chartData} dataKey="value" />
                     </div>
@@ -133,6 +156,7 @@ function App() {
                     <div className="flex flex-col gap-6">
                         <ControlCard />
 
+                        {/* SYSTEM LOGIC PANEL */}
                         <div className="bg-slate-900 text-slate-300 p-6 rounded-3xl shadow-xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-purple-500/20 transition-all"></div>
 
@@ -143,21 +167,25 @@ function App() {
 
                             <div className="flex flex-col gap-4 relative z-10">
                                 <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
-                                        <span className="text-xs font-medium text-slate-400">IF MOISTURE</span>
-                                    </div>
-                                    <span className="font-mono text-orange-300 text-sm">&lt; 35%</span>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Trigger Threshold</span>
+                                    <span className="font-mono text-orange-300 text-sm font-bold">&lt; 35%</span>
                                 </div>
-                                <div className="flex justify-center -my-2">
-                                    <ArrowRight size={16} className="text-slate-600 rotate-90" />
+                                <div className="flex justify-center -my-2 text-slate-700">
+                                    <ArrowRight size={16} className="rotate-90" />
                                 </div>
                                 <div className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${actuators?.waterPump ? "bg-emerald-500/20 border-emerald-500/50" : "bg-slate-800/50 border-slate-700"}`}>
                                     <div className="flex items-center gap-3">
                                         <Zap size={14} className={actuators?.waterPump ? "text-emerald-400 fill-emerald-400" : "text-slate-500"} />
-                                        <span className={`text-xs font-medium ${actuators?.waterPump ? "text-emerald-100" : "text-slate-400"}`}>ACTIVATE PUMP</span>
+                                        <span className={`text-[10px] font-bold ${actuators?.waterPump ? "text-emerald-100" : "text-slate-400 uppercase"}`}>Pump Status</span>
                                     </div>
-                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${actuators?.waterPump ? "bg-emerald-500 text-white" : "bg-slate-700 text-slate-500"}`}>{actuators?.waterPump ? "ON" : "OFF"}</span>
+                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded ${actuators?.waterPump ? "bg-emerald-500 text-white" : "bg-slate-700 text-slate-500"}`}>{actuators?.waterPump ? "ON" : "OFF"}</span>
+                                </div>
+                                <div className="flex justify-center -my-2 text-slate-700">
+                                    <ArrowRight size={16} className="rotate-90" />
+                                </div>
+                                <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-700 text-[10px] font-bold text-slate-500 uppercase">
+                                    <span>Cut-off Point</span>
+                                    <span className="text-blue-400 font-mono text-sm font-bold">40%</span>
                                 </div>
                             </div>
                         </div>
