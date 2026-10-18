@@ -8,4 +8,16 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/database'],
+          'vendor-charts': ['recharts'],
+          'vendor-ui': ['lucide-react', 'zod']
+        }
+      }
+    }
+  }
 })
