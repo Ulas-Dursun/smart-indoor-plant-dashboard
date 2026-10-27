@@ -5,6 +5,7 @@
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8?style=flat&logo=tailwindcss)](https://tailwindcss.com/)
 [![Zod](https://img.shields.io/badge/Zod-Schema_Validation-3e67b1?style=flat&logo=zod)](https://zod.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-RTDB-ffca28?style=flat&logo=firebase)](https://firebase.google.com/)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/ulasdursun)
 
 A modern, high-resilience **IoT Telemetry and Closed-Loop Automation Dashboard** developed as the Capstone Project at **Bahçeşehir University (Department of Software Engineering)**.
 
@@ -160,4 +161,5 @@ If you refer to or build upon this project for academic or technical study, plea
 *Bahçeşehir University — B.Sc. Software Engineering Graduate*  
 * Focus: Backend Systems, Concurrency, and Cloud-Native Engineering (Go, Java, Rust, Cloud Architectures)
 * **GitHub:** [@ulas-dursun](https://github.com/ulas-dursun)  
-* **LinkedIn:** [linkedin.com/in/ulas-dursun](https://www.linkedin.com/in/ulas-dursun)
+* **LinkedIn:** [linkedin.com/in/ulas-dursun](https://www.linkedin.com/in/ulas-dursun)  
+* **Support:** [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/ulasdursun)
