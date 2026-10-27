@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use or refer to this software in your research or project, please cite it as below."
+authors:
+  - family-names: "Dursun"
+    given-names: "Ulaş"
+    affiliation: "Bahçeşehir University"
+title: "Smart Indoor Plant Dashboard: Real-Time IoT Telemetry & Closed-Loop Control System"
+version: 1.0.0
+date-released: 2026-01-15
+url: "https://github.com/ulas-dursun/smart-indoor-plant-dashboard"

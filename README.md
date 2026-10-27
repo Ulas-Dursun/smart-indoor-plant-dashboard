@@ -59,9 +59,10 @@ flowchart TD
   * **Ficus Lyrata (Fiddle Leaf Fig):** Min 30% – Cutoff 45% (Moderate moisture)
   * **Custom Agronomic Profile:** Full user control over arbitrary limits.
 
-### 2. 🛡️ Actuator Hardware Safety Guard
-* **Max Continuous Run Timeout:** Prevents root flooding and motor burnout if sensor telemetry fails or water reservoir is empty (configurable between 3s and 30s).
-* **Hydration Soak Cooldown:** Enforces a mandatory rest period between irrigation pulses to allow water absorption into the substrate before re-triggering.
+### 2. 🛡️ Client-Side Actuator Safety Protocol (UX Guardrails)
+* **Max Continuous Run Timeout:** A browser-side safety guard that automatically sends a pump-stop command after an elapsed limit (configurable between 3s and 60s) during normal interactive sessions.
+* **Hydration Soak Cooldown:** Enforces a mandatory front-end lockout period between irrigation cycles to allow water absorption into the substrate before re-triggering.
+* **⚠️ Physical Hardware Safety Boundary:** Client-side timers run in the browser and **cannot substitute for microcontroller edge firmware safety**. If a client tab closes, crashes, or loses network connection while an actuator is energized, browser timers cannot turn off the relay. Real-world edge hardware deployments require independent on-device firmware safety (watchdog timers, hardware pulse cutoff, and fail-safe GPIO default state on boot/disconnect).
 
 ### 3. 🎮 Virtual ESP32 Hardware Simulator (Portfolio Demo Mode)
 * An integrated **Hardware Sandbox** that can be toggled on/off with a single click.
@@ -127,6 +128,29 @@ npm run dev
 npm run lint
 npm run build
 ```
+
+---
+
+## 🔒 Firebase Security & Realtime Database Rules
+
+A hardened, schema-validated rules definition is provided in [`database.rules.json`](./database.rules.json) with project mapping in [`firebase.json`](./firebase.json):
+- **Deny-by-default Root:** Prohibits unrestricted writes across unmapped paths.
+- **Actuator & Configuration Protection:** Requires authenticated identity (`auth != null`) to trigger relays (`actuators/waterPump`, `status/fan`, `status/led`) or alter closed-loop parameters (`system/thresholds`).
+- **Telemetry Type & Range Validation:** Enforces numerical ranges (e.g. soil moisture: 0–100%, temperature: -40–85°C) and rejects unvalidated data injections at the database engine level.
+- **Hysteresis Integrity Guard:** Rejects threshold updates where `maxMoisture <= minMoisture`.
+
+To deploy these rules to your Firebase project:
+```bash
+firebase deploy --only database
+```
+
+---
+
+## 📄 License & Citation
+
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
+
+If you refer to or build upon this project for academic or technical study, please cite it using [`CITATION.cff`](./CITATION.cff).
 
 ---
 
